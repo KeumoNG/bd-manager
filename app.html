@@ -15,6 +15,11 @@
 </head>
 <body>
     <div class="container py-4 py-md-5">
+        <!-- Bouton Retour fixe en haut gauche -->
+        <button class="btn btn-outline-orange position-fixed top-0 start-0 m-3" style="z-index: 1000;" onclick="window.location.href = 'index.html'">
+            ← Retour à la connexion
+        </button>
+
         <button id="exportBtn" class="btn btn-orange position-fixed top-0 end-0 m-3" style="z-index: 1000;" onclick="exportToPDF()">
             📄 Exporter en PDF
         </button>
@@ -39,7 +44,7 @@
                 <div class="col-12 col-md-4"><input type="number" id="drawnPages" class="form-control form-control-lg" min="0" value="0"></div>
                 <div class="col-12 col-md-4"><input type="number" id="digitizedPages" class="form-control form-control-lg" min="0" value="0"></div>
             </div>
-            <div class="row mt-3 text-center text-light">
+            <div class="row mt-3 text-center text-dark">
                 <div class="col-12 col-md-4"><small>Total pages prévues</small></div>
                 <div class="col-12 col-md-4"><small>Pages dessinées</small></div>
                 <div class="col-12 col-md-4"><small>Pages numérisées</small></div>
@@ -123,7 +128,7 @@
                 <input type="file" id="pageUpload" class="form-control form-control-lg" accept="image/*" multiple>
                 <button class="btn btn-orange btn-lg mt-2 w-100" onclick="uploadPages()">Uploader les pages</button>
             </div>
-            <ul id="gallery" class="list-group"></ul>
+            <div id="gallery" class="row g-3"></div>
         </section>
     </div>
 
@@ -152,16 +157,6 @@
                 document.getElementById('exportBtn').style.display = 'block';
             });
         }
-
-        function manualSave() {
-            saveData();
-            alert('Changements sauvegardés !');
-        }
-
-        // Sauvegarde auto avant quitter/refresh
-        window.addEventListener('beforeunload', function (e) {
-            saveData();
-        });
     </script>
 </body>
 </html>
