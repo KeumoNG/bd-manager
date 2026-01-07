@@ -1,6 +1,7 @@
 const firebaseConfig = {
   apiKey: "AIzaSyB2J3s1C9-voJPivcxpnc-TG7wUO1nqIwQ",
   authDomain: "bdmanagerclub.firebaseapp.com",
+  databaseURL: "https://bdmanagerclub-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "bdmanagerclub",
   storageBucket: "bdmanagerclub.firebasestorage.app",
   messagingSenderId: "339951909412",
