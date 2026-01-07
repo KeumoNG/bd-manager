@@ -10,14 +10,18 @@
     <link rel="icon" href="assets/favicon.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
     <div class="container py-4 py-md-5">
         <button id="exportBtn" class="btn btn-orange position-fixed top-0 end-0 m-3" style="z-index: 1000;" onclick="exportToPDF()">
             📄 Exporter en PDF
+        </button>
+
+        <!-- Bouton Enregistrer fixe en bas -->
+        <button class="btn btn-orange position-fixed bottom-0 end-0 m-3" style="z-index: 1000;" onclick="manualSave()">
+            💾 Enregistrer les changements
         </button>
 
         <header class="text-center mb-5" data-aos="fade-down">
@@ -35,16 +39,16 @@
                 <div class="col-12 col-md-4"><input type="number" id="drawnPages" class="form-control form-control-lg" min="0" value="0"></div>
                 <div class="col-12 col-md-4"><input type="number" id="digitizedPages" class="form-control form-control-lg" min="0" value="0"></div>
             </div>
-            <div class="row mt-3 text-center">
-                <div class="col-12 col-md-4 text-white"><small>Total pages prévues</small></div>
-                <div class="col-12 col-md-4 text-white"><small>Pages dessinées</small></div>
-                <div class="col-12 col-md-4 text-white"><small>Pages numérisées</small></div>
+            <div class="row mt-3 text-center text-light">
+                <div class="col-12 col-md-4"><small>Total pages prévues</small></div>
+                <div class="col-12 col-md-4"><small>Pages dessinées</small></div>
+                <div class="col-12 col-md-4"><small>Pages numérisées</small></div>
             </div>
             <div class="mt-4">
                 <div class="progress" style="height: 40px;">
                     <div id="progressBar" class="progress-bar" style="width:0%">0%</div>
                 </div>
-                <div class="progress-info text-white" id="progressText">0 pages dessinées | 0 pages numérisées / 50 prévues</div>
+                <div class="progress-info" id="progressText">0 pages dessinées | 0 pages numérisées / 50 prévues</div>
             </div>
         </section>
 
@@ -119,11 +123,11 @@
                 <input type="file" id="pageUpload" class="form-control form-control-lg" accept="image/*" multiple>
                 <button class="btn btn-orange btn-lg mt-2 w-100" onclick="uploadPages()">Uploader les pages</button>
             </div>
-            <div id="gallery" class="row g-3"></div>
+            <ul id="gallery" class="list-group"></ul>
         </section>
     </div>
 
-    <footer class="text-center py-4">
+    <footer class="text-center py-4 text-dark">
         <p>BD Manager © 2026 - Créé par NGANA KEUMO PRINCE<br>
         📞 +237 652382723 | ✉️ nganakeumo@gmail.com</p>
     </footer>
@@ -148,6 +152,16 @@
                 document.getElementById('exportBtn').style.display = 'block';
             });
         }
+
+        function manualSave() {
+            saveData();
+            alert('Changements sauvegardés !');
+        }
+
+        // Sauvegarde auto avant quitter/refresh
+        window.addEventListener('beforeunload', function (e) {
+            saveData();
+        });
     </script>
 </body>
 </html>
