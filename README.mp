@@ -1,9 +1,5 @@
 # BD Manager - Club Dessin Lycée de Makepe
 
-**Projet personnel réalisé par NGANA KEUMO PRINCE**  
-Étudiant Ingenieur/ Informatique  
-Janvier 2026
-
 ## Description
 BD Manager est une application web simple et collaborative pour gérer le projet de Bande Dessinée du Club Dessin du **Lycée de Makepe** (Douala, Cameroun), sous la supervision de M. NGUEWO.
 
@@ -15,7 +11,6 @@ L'outil permet à l'équipe de :
 - Uploader et visualiser les pages de la BD
 - Exporter tout en PDF pour les rapports
 
-Tout est sauvegardé automatiquement dans le navigateur (localStorage) → pas besoin de compte ou serveur.
 
 **Technologies utilisées :**
 - HTML5, CSS3, Vanilla JavaScript
@@ -31,20 +26,19 @@ Tout est sauvegardé automatiquement dans le navigateur (localStorage) → pas b
 - Upload multiple d'images pour la galerie
 - Export PDF complet en un clic
 
-## Démo en ligne
+##  en ligne
 https://keumong.github.io/bd-manager/
 
 (Identifiants : lymak / 0206)
 
-## Installation locale (pour tester)
+## Installation locale 
 1. Clone le repo : `git clone https://github.com/keumong/bd-manager.git`
 2. Ouvre `index.html` dans ton navigateur.
 
-## Captures d'écran (à ajouter plus tard dans ton portfolio)
+## Captures d'écran 
 - Page de connexion
 - Dashboard principal
 - Galerie avec images uploadées
-- PDF exporté
 
 Ce projet montre mes compétences en front-end, gestion de données locales, et création d'outils utiles réels.
 
