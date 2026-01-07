@@ -1,0 +1,41 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), 
+                url('https://i0.wp.com/www.toonsmag.com/wp-content/uploads/2024/01/photo-output-50-scaled.jpeg?fit=2560%2C1439&ssl=1') fixed center/cover;
+    color: #333;
+    min-height: 100vh;
+}
+
+.text-orange { color: #ff9500 !important; }
+
+.btn-orange {
+    background: #ff9500;
+    border: none;
+    color: white;
+    font-weight: bold;
+}
+.btn-orange:hover {
+    background: #e68900;
+}
+
+.btn-outline-orange {
+    border-color: #ff9500;
+    color: #ff9500;
+}
+.btn-outline-orange:hover {
+    background: #ff9500;
+    color: white;
+}
+
+.card {
+    background: #403D3D; /* Gris clair */
+    border: 1px solid #ff9500;
+    border-radius: 20px;
+}
+
+.progress-bar { background: #ff9500; }
+
+.login-body {
+    background: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), 
+                url('https://i0.wp.com/www.toonsmag.com/wp-content/uploads/2024/01/photo-output-50-scaled.jpeg?fit=2560%2C1439&ssl=1') fixed center/cover;
+}
