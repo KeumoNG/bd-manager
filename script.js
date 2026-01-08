@@ -1,19 +1,8 @@
-// ==================== CONFIG FIREBASE ====================
-const firebaseConfig = {
-  apiKey: "AIzaSyB2J3s1C9-voJPivcxpnc-TG7wUO1nqIwQ",
-  authDomain: "bdmanagerclub.firebaseapp.com",
-  databaseURL: "https://bdmanagerclub-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "bdmanagerclub",
-  storageBucket: "bdmanagerclub.firebasestorage.app",
-  messagingSenderId: "339951909412",
-  appId: "1:339951909412:web:b20dd77558e41e70ffb6b1",
-  measurementId: "G-CRTRY0880K"
-};
+// ==================== TES CLÉS SUPABASE ====================
+const supabaseUrl = 'https://cqunlwrulgknpeuntqxk.supabase.co'; // Colle ton Project URL ici
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdW5sd3J1bGdrbnBldW50cXhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5MDMxMzAsImV4cCI6MjA4MzQ3OTEzMH0.u_vP2wZBibNL9-OQ8IZQHuRne9s9ZXWx-HYKr_RjVqc'; // Colle ton anon public key ici
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // ===========================================================
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const dataRef = db.ref('bdManagerData');
 
 let data = {
   members: [],
@@ -26,11 +15,13 @@ let data = {
   digitized: 0
 };
 
-// Chargement realtime
-dataRef.on('value', (snapshot) => {
-  data = snapshot.val() || { members: [], tasks: [], goals: [], materials: [], gallery: [], totalPages: 50, drawn: 0, digitized: 0 };
-  
-  // Fix: Initialise si undefined
+// Chargement des données
+async function loadData() {
+  const { data: dbData, error } = await supabase.from('bd_data').select('data').single();
+  if (error) console.error('Load error:', error);
+  if (dbData) data = dbData.data || data;
+
+  // Initialise si vide
   data.members = data.members || [];
   data.tasks = data.tasks || [];
   data.goals = data.goals || [];
@@ -40,10 +31,10 @@ dataRef.on('value', (snapshot) => {
   data.drawn = data.drawn || 0;
   data.digitized = data.digitized || 0;
 
+  // Mise à jour UI
   const totalPagesEl = document.getElementById('totalPages');
   const drawnPagesEl = document.getElementById('drawnPages');
   const digitizedPagesEl = document.getElementById('digitizedPages');
-
   if (totalPagesEl) totalPagesEl.value = data.totalPages;
   if (drawnPagesEl) drawnPagesEl.value = data.drawn;
   if (digitizedPagesEl) digitizedPagesEl.value = data.digitized;
@@ -54,41 +45,45 @@ dataRef.on('value', (snapshot) => {
   renderMaterials();
   renderGallery();
   updateProgress();
-});
+}
+
+loadData();
+
+// Realtime updates
+supabase.channel('bd_data_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'bd_data' }, (payload) => {
+  console.log('Realtime update:', payload);
+  data = payload.new.data || data;
+  loadData();
+}).subscribe();
 
 // Sauvegarde
-function saveData() {
-  dataRef.set(data);
+async function saveData() {
+  const { error } = await supabase.from('bd_data').upsert({ id: 1, data });
+  if (error) console.error('Save error:', error);
+  else console.log('Saved!');
+}
+
+// Manual save
+function manualSave() {
+  saveData();
+  alert('Sauvegardé !');
 }
 
 // Update Progress
 function updateProgress() {
-  const totalEl = document.getElementById('totalPages');
-  const drawnEl = document.getElementById('drawnPages');
-  const digitizedEl = document.getElementById('digitizedPages');
-
-  const total = parseInt(totalEl ? totalEl.value : data.totalPages) || 50;
-  const drawn = parseInt(drawnEl ? drawnEl.value : data.drawn) || 0;
-  const digitized = parseInt(digitizedEl ? digitizedEl.value : data.digitized) || 0;
-
+  const total = parseInt(document.getElementById('totalPages')?.value || data.totalPages) || 50;
+  const drawn = parseInt(document.getElementById('drawnPages')?.value || data.drawn) || 0;
+  const digitized = parseInt(document.getElementById('digitizedPages')?.value || data.digitized) || 0;
   data.totalPages = total;
   data.drawn = drawn;
   data.digitized = digitized;
-
   const percent = total > 0 ? Math.round((digitized / total) * 100) : 0;
-
   const progressBar = document.getElementById('progressBar') || document.getElementById('progressBarPublic');
   const progressText = document.getElementById('progressText') || document.getElementById('progressTextPublic');
-
-  if (progressBar) {
-    progressBar.style.width = percent + '%';
-    progressBar.textContent = percent + '%';
-  }
-  if (progressText) {
-    progressText.textContent = `${drawn} pages dessinées | ${digitized} pages numérisées / ${total} prévues`;
-  }
-
-  if (totalEl) saveData(); // Sauvegarde seulement sur app.html
+  if (progressBar) progressBar.style.width = percent + '%';
+  if (progressBar) progressBar.textContent = percent + '%';
+  if (progressText) progressText.textContent = `${drawn} pages dessinées | ${digitized} pages numérisées / ${total} prévues`;
+  if (document.getElementById('totalPages')) saveData();
 }
 
 // Membres
@@ -112,12 +107,11 @@ function renderMembers() {
 }
 
 function addMember() {
-  if (!document.getElementById('memberName')) return;
-  const name = document.getElementById('memberName').value.trim();
-  const phone = document.getElementById('memberPhone').value.trim();
-  const role = document.getElementById('memberRole').value;
+  const name = document.getElementById('memberName')?.value.trim();
+  const phone = document.getElementById('memberPhone')?.value.trim();
+  const role = document.getElementById('memberRole')?.value;
   if (name) {
-    if (!data.members) data.members = [];
+    data.members = data.members || [];
     data.members.push({name, phone, role});
     saveData();
     renderMembers();
@@ -127,7 +121,7 @@ function addMember() {
 }
 
 function removeMember(i) {
-  if (!data.members) return;
+  data.members = data.members || [];
   data.members.splice(i, 1);
   saveData();
   renderMembers();
@@ -165,10 +159,9 @@ function renderTasks(filter = 'all') {
 }
 
 function addTask() {
-  if (!document.getElementById('taskDesc')) return;
-  const desc = document.getElementById('taskDesc').value.trim();
+  const desc = document.getElementById('taskDesc')?.value.trim();
   if (desc) {
-    if (!data.tasks) data.tasks = [];
+    data.tasks = data.tasks || [];
     data.tasks.push({
       desc,
       member: document.getElementById('taskMember').value,
@@ -183,7 +176,7 @@ function addTask() {
 }
 
 function removeTask(i) {
-  if (!data.tasks) return;
+  data.tasks = data.tasks || [];
   data.tasks.splice(i, 1);
   saveData();
   renderTasks('all');
@@ -214,10 +207,9 @@ function renderGoals() {
 }
 
 function addGoal() {
-  if (!document.getElementById('goalText')) return;
-  const text = document.getElementById('goalText').value.trim();
+  const text = document.getElementById('goalText')?.value.trim();
   if (text) {
-    if (!data.goals) data.goals = [];
+    data.goals = data.goals || [];
     data.goals.push({text, checked: false});
     saveData();
     renderGoals();
@@ -226,14 +218,14 @@ function addGoal() {
 }
 
 function toggleGoal(i) {
-  if (!data.goals) return;
+  data.goals = data.goals || [];
   data.goals[i].checked = !data.goals[i].checked;
   saveData();
   renderGoals();
 }
 
 function removeGoal(i) {
-  if (!data.goals) return;
+  data.goals = data.goals || [];
   data.goals.splice(i, 1);
   saveData();
   renderGoals();
@@ -253,10 +245,9 @@ function renderMaterials() {
 }
 
 function addMaterial() {
-  if (!document.getElementById('materialText')) return;
-  const text = document.getElementById('materialText').value.trim();
+  const text = document.getElementById('materialText')?.value.trim();
   if (text) {
-    if (!data.materials) data.materials = [];
+    data.materials = data.materials || [];
     data.materials.push(text);
     saveData();
     renderMaterials();
@@ -265,7 +256,7 @@ function addMaterial() {
 }
 
 function removeMaterial(i) {
-  if (!data.materials) return;
+  data.materials = data.materials || [];
   data.materials.splice(i, 1);
   saveData();
   renderMaterials();
@@ -293,7 +284,7 @@ function renderGallery() {
 function uploadPages() {
   const files = document.getElementById('pageUpload')?.files;
   if (!files || files.length === 0) return;
-  if (!data.gallery) data.gallery = [];
+  data.gallery = data.gallery || [];
   Array.from(files).forEach(file => {
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -301,17 +292,13 @@ function uploadPages() {
       saveData();
       renderGallery();
     };
-    reader.onerror = function() {
-      console.error('Erreur lecture fichier');
-      alert('Erreur lors de l\'upload de l\'image. Réessayez ou vérifiez le fichier.');
-    };
     reader.readAsDataURL(file);
   });
   document.getElementById('pageUpload').value = '';
 }
 
 function removePage(i) {
-  if (!data.gallery) return;
+  data.gallery = data.gallery || [];
   data.gallery.splice(i, 1);
   saveData();
   renderGallery();
