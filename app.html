@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Accomplissements BD - Lycée Makepe</title>
+    <title>BD Manager - Lycée Makepe</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
@@ -15,14 +16,24 @@
     <div class="container py-5">
         <header class="text-center mb-5" data-aos="fade-down">
             <img src="assets/logo.png" alt="Logo Lycée Makepe" class="img-fluid mb-4" style="max-height: 140px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,255,255,0.5);">
-            <h1 class="display-3 fw-bold text-cyan">Accomplissements du Projet BD</h1>
-            <h2 class="display-5 text-neon">Club Dessin - Lycée de Makepe</h2>
+            <h1 class="display-3 fw-bold text-cyan">Lycée de Makepe</h1>
+            <h2 class="display-5 text-neon">BD Manager - Club Dessin</h2>
             <p class="lead">Superviseur : M. NGUEWO</p>
         </header>
 
         <!-- Progrès BD -->
         <section class="card p-4 mb-5" data-aos="fade-up">
             <h2 class="text-center mb-4 text-cyan">Avancement de la Bande Dessinée</h2>
+            <div class="row g-3">
+                <div class="col-md-4"><input type="number" id="totalPages" class="form-control" min="1" value="50"></div>
+                <div class="col-md-4"><input type="number" id="drawnPages" class="form-control" min="0" value="0"></div>
+                <div class="col-md-4"><input type="number" id="digitizedPages" class="form-control" min="0" value="0"></div>
+            </div>
+            <div class="row mt-3 text-center text-light">
+                <div class="col-md-4"><small>Total pages prévues</small></div>
+                <div class="col-md-4"><small>Pages dessinées</small></div>
+                <div class="col-md-4"><small>Pages numérisées</small></div>
+            </div>
             <div class="mt-4">
                 <div class="progress">
                     <div id="progressBar" class="progress-bar" style="width:0%">0%</div>
@@ -34,30 +45,74 @@
         <!-- Membres -->
         <section class="card p-4 mb-5" data-aos="fade-up" data-aos-delay="100">
             <h2 class="text-center mb-4 text-cyan">Membres du Club</h2>
+            <div class="row g-3 mb-3">
+                <div class="col-md-4"><input type="text" id="memberName" class="form-control" placeholder="Nom du membre"></div>
+                <div class="col-md-3"><input type="tel" id="memberPhone" class="form-control" placeholder="Téléphone (optionnel)"></div>
+                <div class="col-md-3">
+                    <select id="memberRole" class="form-select">
+                        <option>Dessin</option>
+                        <option>Numérisation</option>
+                        <option>Les deux</option>
+                        <option>Autre</option>
+                    </select>
+                </div>
+                <div class="col-md-2"><button class="btn btn-neon w-100" onclick="addMember()">Ajouter</button></div>
+            </div>
             <ul id="membersList" class="list-group"></ul>
         </section>
 
         <!-- Tâches -->
         <section class="card p-4 mb-5" data-aos="fade-up" data-aos-delay="200">
             <h2 class="text-center mb-4 text-cyan">Tâches Assignées</h2>
+            <div class="row g-3 mb-3">
+                <div class="col-md-5"><input type="text" id="taskDesc" class="form-control" placeholder="Description tâche"></div>
+                <div class="col-md-3"><select id="taskMember" class="form-select"><option value="">Sans responsable</option></select></div>
+                <div class="col-md-2"><input type="date" id="taskDeadline" class="form-control"></div>
+                <div class="col-md-2">
+                    <select id="taskStatus" class="form-select">
+                        <option>To Do</option>
+                        <option>In Progress</option>
+                        <option>Done</option>
+                    </select>
+                </div>
+                <div class="col-12"><button class="btn btn-neon w-100" onclick="addTask()">Ajouter Tâche</button></div>
+            </div>
+            <div class="btn-group w-100 mb-3">
+                <button class="btn btn-outline-cyan flex-fill" onclick="filterTasks('all')">Toutes</button>
+                <button class="btn btn-outline-cyan flex-fill" onclick="filterTasks('To Do')">To Do</button>
+                <button class="btn btn-outline-cyan flex-fill" onclick="filterTasks('In Progress')">In Progress</button>
+                <button class="btn btn-outline-cyan flex-fill" onclick="filterTasks('Done')">Done</button>
+            </div>
             <ul id="tasksList" class="list-group"></ul>
         </section>
 
         <!-- Objectifs -->
         <section class="card p-4 mb-5" data-aos="fade-up" data-aos-delay="300">
             <h2 class="text-center mb-4 text-cyan">Objectifs du Club</h2>
+            <div class="input-group mb-3">
+                <input type="text" id="goalText" class="form-control" placeholder="Nouvel objectif">
+                <button class="btn btn-neon" onclick="addGoal()">Ajouter</button>
+            </div>
             <ul id="goalsList" class="list-group"></ul>
         </section>
 
         <!-- Matériel -->
         <section class="card p-4 mb-5" data-aos="fade-up" data-aos-delay="400">
             <h2 class="text-center mb-4 text-cyan">Matériel Disponible</h2>
+            <div class="input-group mb-3">
+                <input type="text" id="materialText" class="form-control" placeholder="Ex: tablette graphique">
+                <button class="btn btn-neon" onclick="addMaterial()">Ajouter</button>
+            </div>
             <ul id="materialsList" class="list-group"></ul>
         </section>
 
         <!-- Galerie -->
         <section class="card p-4 mb-5" data-aos="fade-up" data-aos-delay="500">
             <h2 class="text-center mb-4 text-cyan">Galerie Pages BD</h2>
+            <div class="mb-3">
+                <input type="file" id="pageUpload" class="form-control" accept="image/*" multiple>
+                <button class="btn btn-neon mt-2 w-100" onclick="uploadPages()">Uploader les pages</button>
+            </div>
             <div id="gallery" class="row g-3"></div>
         </section>
     </div>
