@@ -1,7 +1,7 @@
 // ==================== TES CLÉS SUPABASE ====================
 const supabaseUrl = 'https://cqunlwrulgknpeuntqxk.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdW5sd3J1bGdrbnBldW50cXhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5MDMxMzAsImV4cCI6MjA4MzQ3OTEzMH0.u_vP2wZBibNL9-OQ8IZQHuRne9s9ZXWx-HYKr_RjVqc';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseClient = createClient(supabaseUrl, supabaseAnonKey); // Renommé pour fix duplicate
 // =====================================================================
 
 let data = {
@@ -17,7 +17,7 @@ let data = {
 
 // Chargement des données
 async function loadData() {
-  const { data: dbData, error } = await supabase.from('bd_data').select('data').eq('id', '1').single();
+  const { data: dbData, error } = await supabaseClient.from('bd_data').select('data').eq('id', '1').single();
   if (error) console.error('Load error:', error);
   if (dbData && dbData.data) data = dbData.data;
 
@@ -45,7 +45,7 @@ async function loadData() {
 loadData();
 
 // Realtime subscription
-supabase.channel('bd_data_changes').on(
+supabaseClient.channel('bd_data_changes').on(
   'postgres_changes',
   { event: '*', schema: 'public', table: 'bd_data', filter: 'id=eq.1' },
   (payload) => {
@@ -57,8 +57,9 @@ supabase.channel('bd_data_changes').on(
 
 // Sauvegarde
 async function saveData() {
-  const { error } = await supabase.from('bd_data').upsert({ id: '1', data });
+  const { error } = await supabaseClient.from('bd_data').upsert({ id: '1', data });
   if (error) console.error('Save error:', error);
+  else console.log('Data saved!');
 }
 
 // Manual save
@@ -108,6 +109,7 @@ function renderMembers() {
 }
 
 function addMember() {
+  console.log('addMember called');
   const name = document.getElementById('memberName')?.value.trim();
   const phone = document.getElementById('memberPhone')?.value.trim();
   const role = document.getElementById('memberRole')?.value;
@@ -147,7 +149,7 @@ function renderTasks(filter = 'all') {
   const list = document.getElementById('tasksList');
   if (!list) return;
   list.innerHTML = '';
-  (data.tasks || []).filter(t => filter === 'all' || t.status === filter).forEach((t, i) => {
+  (data.tasks || []).filter(t => filter === 'all' || t.status === t.status).forEach((t, i) => {
     const li = document.createElement('li');
     li.className = `list-group-item ${t.status === 'Done' ? 'bg-success bg-opacity-25' : ''}`;
     li.innerHTML = `
@@ -160,6 +162,7 @@ function renderTasks(filter = 'all') {
 }
 
 function addTask() {
+  console.log('addTask called');
   const desc = document.getElementById('taskDesc')?.value.trim();
   if (desc) {
     data.tasks = data.tasks || [];
@@ -208,6 +211,7 @@ function renderGoals() {
 }
 
 function addGoal() {
+  console.log('addGoal called');
   const text = document.getElementById('goalText')?.value.trim();
   if (text) {
     data.goals = data.goals || [];
@@ -246,6 +250,7 @@ function renderMaterials() {
 }
 
 function addMaterial() {
+  console.log('addMaterial called');
   const text = document.getElementById('materialText')?.value.trim();
   if (text) {
     data.materials = data.materials || [];
@@ -282,22 +287,20 @@ function renderGallery() {
   });
 }
 
-async function uploadPages() {
+function uploadPages() {
+  console.log('uploadPages called');
   const files = document.getElementById('pageUpload')?.files;
   if (!files || files.length === 0) return;
   data.gallery = data.gallery || [];
-  for (const file of files) {
-    const { data: uploadData, error } = await supabase.storage.from('pages-bd').upload(`${Date.now()}_${file.name}`, file);
-    if (error) {
-      console.error('Upload error:', error);
-      alert('Erreur upload image');
-      continue;
-    }
-    const { data: urlData } = supabase.storage.from('pages-bd').getPublicUrl(uploadData.path);
-    data.gallery.push(urlData.publicUrl);
-  }
-  saveData();
-  renderGallery();
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      data.gallery.push(e.target.result);
+      saveData();
+      renderGallery();
+    };
+    reader.readAsDataURL(file);
+  });
   document.getElementById('pageUpload').value = '';
 }
 
