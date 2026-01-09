@@ -1,4 +1,4 @@
-// ==================== TES CLÉS SUPABASE ====================
+
 const supabaseUrl = 'https://cqunlwrulgknpeuntqxk.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdW5sd3J1bGdrbnBldW50cXhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5MDMxMzAsImV4cCI6MjA4MzQ3OTEzMH0.u_vP2wZBibNL9-OQ8IZQHuRne9s9ZXWx-HYKr_RjVqc';
 const supabaseClient = createClient(supabaseUrl, supabaseAnonKey); // Renommé pour fix duplicate
