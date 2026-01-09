@@ -1,7 +1,7 @@
 // ==================== TES CLÉS SUPABASE ====================
 const supabaseUrl = 'https://cqunlwrulgknpeuntqxk.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdW5sd3J1bGdrbnBldW50cXhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5MDMxMzAsImV4cCI6MjA4MzQ3OTEzMH0.u_vP2wZBibNL9-OQ8IZQHuRne9s9ZXWx-HYKr_RjVqc';
-const supabaseClient = createClient(supabaseUrl, supabaseAnonKey); 
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // =====================================================================
 
 let data = {
@@ -17,7 +17,7 @@ let data = {
 
 // Chargement des données
 async function loadData() {
-  const { data: dbData, error } = await supabaseClient.from('bd_data').select('data').eq('id', '1').single();
+  const { data: dbData, error } = await supabase.from('bd_data').select('data').eq('id', '1').single();
   if (error) console.error('Load error:', error);
   if (dbData && dbData.data) data = dbData.data;
 
@@ -42,10 +42,8 @@ async function loadData() {
   updateProgress();
 }
 
-loadData();
-
 // Realtime subscription
-supabaseClient.channel('bd_data_changes').on(
+supabase.channel('bd_data_changes').on(
   'postgres_changes',
   { event: '*', schema: 'public', table: 'bd_data', filter: 'id=eq.1' },
   (payload) => {
@@ -57,7 +55,7 @@ supabaseClient.channel('bd_data_changes').on(
 
 // Sauvegarde
 async function saveData() {
-  const { error } = await supabaseClient.from('bd_data').upsert({ id: '1', data });
+  const { error } = await supabase.from('bd_data').upsert({ id: '1', data });
   if (error) console.error('Save error:', error);
 }
 
@@ -284,13 +282,13 @@ async function uploadPages() {
   if (!files || files.length === 0) return;
   data.gallery = data.gallery || [];
   for (const file of files) {
-    const { data: uploadData, error } = await supabaseClient.storage.from('pages-bd').upload(`${Date.now()}_${file.name}`, file);
+    const { data: uploadData, error } = await supabase.storage.from('pages-bd').upload(`${Date.now()}_${file.name}`, file);
     if (error) {
       console.error('Upload error:', error);
-      alert('Erreur lors de l\'upload de l\'image. Réessayez.');
+      alert('Erreur upload image');
       continue;
     }
-    const { data: urlData } = supabaseClient.storage.from('pages-bd').getPublicUrl(uploadData.path);
+    const { data: urlData } = supabase.storage.from('pages-bd').getPublicUrl(uploadData.path);
     data.gallery.push(urlData.publicUrl);
   }
   saveData();
