@@ -42,6 +42,8 @@ async function loadData() {
   updateProgress();
 }
 
+loadData();
+
 // Realtime subscription
 supabase.channel('bd_data_changes').on(
   'postgres_changes',
@@ -68,11 +70,14 @@ function manualSave() {
 // Update Progress
 function updateProgress() {
   const total = parseInt(document.getElementById('totalPages')?.value || data.totalPages) || 50;
-  const drawn = parseInt(document.getElementById('drawnPages')?.value || data.drawn) || 0;
-  const digitized = parseInt(document.getElementById('digitizedPages')?.value || data.digitized) || 0;
   data.totalPages = total;
+
+  const drawn = parseInt(document.getElementById('drawnPages')?.value || data.drawn) || 0;
   data.drawn = drawn;
+
+  const digitized = parseInt(document.getElementById('digitizedPages')?.value || data.digitized) || 0;
   data.digitized = digitized;
+
   const percent = total > 0 ? Math.round((digitized / total) * 100) : 0;
   const progressBar = document.getElementById('progressBar') || document.getElementById('progressBarPublic');
   const progressText = document.getElementById('progressText') || document.getElementById('progressTextPublic');
