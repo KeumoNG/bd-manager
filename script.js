@@ -2,7 +2,7 @@
 const supabaseUrl = 'https://cqunlwrulgknpeuntqxk.supabase.co'; 
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdW5sd3J1bGdrbnBldW50cXhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5MDMxMzAsImV4cCI6MjA4MzQ3OTEzMH0.u_vP2wZBibNL9-OQ8IZQHuRne9s9ZXWx-HYKr_RjVqc'; 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
-// ===========================================================
+// =====================================================================
 
 let data = {
   members: [],
@@ -17,11 +17,10 @@ let data = {
 
 // Chargement des données
 async function loadData() {
-  const { data: dbData, error } = await supabase.from('bd_data').select('data').single();
+  const { data: dbData, error } = await supabase.from('bd_data').select('data').eq('id', '1').single();
   if (error) console.error('Load error:', error);
-  if (dbData) data = dbData.data || data;
+  if (dbData && dbData.data) data = dbData.data;
 
-  // Initialise si vide
   data.members = data.members || [];
   data.tasks = data.tasks || [];
   data.goals = data.goals || [];
@@ -31,13 +30,9 @@ async function loadData() {
   data.drawn = data.drawn || 0;
   data.digitized = data.digitized || 0;
 
-  // Mise à jour UI
-  const totalPagesEl = document.getElementById('totalPages');
-  const drawnPagesEl = document.getElementById('drawnPages');
-  const digitizedPagesEl = document.getElementById('digitizedPages');
-  if (totalPagesEl) totalPagesEl.value = data.totalPages;
-  if (drawnPagesEl) drawnPagesEl.value = data.drawn;
-  if (digitizedPagesEl) digitizedPagesEl.value = data.digitized;
+  if (document.getElementById('totalPages')) document.getElementById('totalPages').value = data.totalPages;
+  if (document.getElementById('drawnPages')) document.getElementById('drawnPages').value = data.drawn;
+  if (document.getElementById('digitizedPages')) document.getElementById('digitizedPages').value = data.digitized;
 
   renderMembers();
   renderTasks('all');
@@ -49,18 +44,22 @@ async function loadData() {
 
 loadData();
 
-// Realtime updates
-supabase.channel('bd_data_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'bd_data' }, (payload) => {
-  console.log('Realtime update:', payload);
-  data = payload.new.data || data;
-  loadData();
-}).subscribe();
+// Realtime subscription
+supabase.channel('bd_data_changes').on(
+  'postgres_changes',
+  { event: '*', schema: 'public', table: 'bd_data', filter: 'id=eq.1' },
+  (payload) => {
+    console.log('Realtime update:', payload);
+    data = payload.new.data || data;
+    loadData();
+  }
+).subscribe();
 
 // Sauvegarde
 async function saveData() {
-  const { error } = await supabase.from('bd_data').upsert({ id: 1, data });
+  const { error } = await supabase.from('bd_data').upsert({ id: '1', data });
   if (error) console.error('Save error:', error);
-  else console.log('Saved!');
+  else console.log('Data saved!');
 }
 
 // Manual save
