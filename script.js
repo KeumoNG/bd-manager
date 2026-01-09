@@ -1,8 +1,17 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyB2J3s1C9-voJPivcxpnc-TG7wUO1nqIwQ",
+  authDomain: "bdmanagerclub.firebaseapp.com",
+  databaseURL: "https://bdmanagerclub-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "bdmanagerclub",
+  storageBucket: "bdmanagerclub.firebasestorage.app",
+  messagingSenderId: "339951909412",
+  appId: "1:339951909412:web:b20dd77558e41e70ffb6b1",
+  measurementId: "G-CRTRY0880K"
+};
 
-const supabaseUrl = 'https://cqunlwrulgknpeuntqxk.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdW5sd3J1bGdrbnBldW50cXhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5MDMxMzAsImV4cCI6MjA4MzQ3OTEzMH0.u_vP2wZBibNL9-OQ8IZQHuRne9s9ZXWx-HYKr_RjVqc';
-const supabaseClient = createClient(supabaseUrl, supabaseAnonKey); // Renommé pour fix duplicate
-// =====================================================================
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const dataRef = db.ref('bdManagerData');
 
 let data = {
   members: [],
@@ -15,12 +24,9 @@ let data = {
   digitized: 0
 };
 
-// Chargement des données
-async function loadData() {
-  const { data: dbData, error } = await supabaseClient.from('bd_data').select('data').eq('id', '1').single();
-  if (error) console.error('Load error:', error);
-  if (dbData && dbData.data) data = dbData.data;
-
+// Chargement realtime
+dataRef.on('value', (snapshot) => {
+  data = snapshot.val() || data;
   data.members = data.members || [];
   data.tasks = data.tasks || [];
   data.goals = data.goals || [];
@@ -40,26 +46,11 @@ async function loadData() {
   renderMaterials();
   renderGallery();
   updateProgress();
-}
+});
 
-loadData();
-
-// Realtime subscription
-supabaseClient.channel('bd_data_changes').on(
-  'postgres_changes',
-  { event: '*', schema: 'public', table: 'bd_data', filter: 'id=eq.1' },
-  (payload) => {
-    console.log('Realtime update:', payload);
-    data = payload.new.data || data;
-    loadData();
-  }
-).subscribe();
-
-// Sauvegarde
-async function saveData() {
-  const { error } = await supabaseClient.from('bd_data').upsert({ id: '1', data });
-  if (error) console.error('Save error:', error);
-  else console.log('Data saved!');
+// Save
+function saveData() {
+  dataRef.set(data);
 }
 
 // Manual save
@@ -70,15 +61,12 @@ function manualSave() {
 
 // Update Progress
 function updateProgress() {
-  const total = parseInt(document.getElementById('totalPages')?.value || data.totalPages) || 50;
+  const total = parseInt(document.getElementById('totalPages')?.value) || data.totalPages || 50;
+  const drawn = parseInt(document.getElementById('drawnPages')?.value) || data.drawn || 0;
+  const digitized = parseInt(document.getElementById('digitizedPages')?.value) || data.digitized || 0;
   data.totalPages = total;
-
-  const drawn = parseInt(document.getElementById('drawnPages')?.value || data.drawn) || 0;
   data.drawn = drawn;
-
-  const digitized = parseInt(document.getElementById('digitizedPages')?.value || data.digitized) || 0;
   data.digitized = digitized;
-
   const percent = total > 0 ? Math.round((digitized / total) * 100) : 0;
   const progressBar = document.getElementById('progressBar') || document.getElementById('progressBarPublic');
   const progressText = document.getElementById('progressText') || document.getElementById('progressTextPublic');
@@ -93,7 +81,7 @@ function renderMembers() {
   const list = document.getElementById('membersList');
   if (!list) return;
   list.innerHTML = '';
-  (data.members || []).forEach((m, i) => {
+  data.members.forEach((m, i) => {
     const li = document.createElement('li');
     li.className = 'list-group-item d-flex justify-content-between align-items-center';
     li.innerHTML = `
@@ -101,7 +89,7 @@ function renderMembers() {
         <strong>${m.name}</strong> - ${m.role}<br>
         <small>📞 ${m.phone || 'Aucun téléphone'}</small>
       </div>
-      ${document.getElementById('memberName') ? `<button class="btn btn-danger btn-sm" onclick="removeMember(${i})">Suppr</button>` : ''}
+      <button class="btn btn-danger btn-sm" onclick="removeMember(${i})">Suppr</button>
     `;
     list.appendChild(li);
   });
@@ -109,12 +97,10 @@ function renderMembers() {
 }
 
 function addMember() {
-  console.log('addMember called');
-  const name = document.getElementById('memberName')?.value.trim();
-  const phone = document.getElementById('memberPhone')?.value.trim();
-  const role = document.getElementById('memberRole')?.value;
+  const name = document.getElementById('memberName').value.trim();
+  const phone = document.getElementById('memberPhone').value.trim();
+  const role = document.getElementById('memberRole').value;
   if (name) {
-    data.members = data.members || [];
     data.members.push({name, phone, role});
     saveData();
     renderMembers();
@@ -124,7 +110,6 @@ function addMember() {
 }
 
 function removeMember(i) {
-  data.members = data.members || [];
   data.members.splice(i, 1);
   saveData();
   renderMembers();
@@ -136,7 +121,7 @@ function updateTaskSelect() {
   const select = document.getElementById('taskMember');
   if (!select) return;
   select.innerHTML = '<option value="">Sans responsable</option>';
-  (data.members || []).forEach(m => {
+  data.members.forEach(m => {
     const opt = document.createElement('option');
     opt.value = m.name;
     opt.textContent = m.name;
@@ -149,23 +134,21 @@ function renderTasks(filter = 'all') {
   const list = document.getElementById('tasksList');
   if (!list) return;
   list.innerHTML = '';
-  (data.tasks || []).filter(t => filter === 'all' || t.status === t.status).forEach((t, i) => {
+  data.tasks.filter(t => filter === 'all' || t.status === filter).forEach((t, i) => {
     const li = document.createElement('li');
-    li.className = `list-group-item ${t.status === 'Done' ? 'bg-success bg-opacity-25' : ''}`;
+    li.className = `list-group-item bg-dark text-light ${t.status === 'Done' ? 'bg-success bg-opacity-25' : ''}`;
     li.innerHTML = `
       <strong>${t.desc}</strong> - ${t.member || 'Aucun'}<br>
       <small>Deadline: ${t.deadline || 'Aucune'} | Statut: ${t.status}</small>
-      ${document.getElementById('taskDesc') ? `<button class="btn btn-danger btn-sm float-end" onclick="removeTask(${i})">Suppr</button>` : ''}
+      <button class="btn btn-danger btn-sm float-end" onclick="removeTask(${i})">Suppr</button>
     `;
     list.appendChild(li);
   });
 }
 
 function addTask() {
-  console.log('addTask called');
-  const desc = document.getElementById('taskDesc')?.value.trim();
+  const desc = document.getElementById('taskDesc').value.trim();
   if (desc) {
-    data.tasks = data.tasks || [];
     data.tasks.push({
       desc,
       member: document.getElementById('taskMember').value,
@@ -180,7 +163,6 @@ function addTask() {
 }
 
 function removeTask(i) {
-  data.tasks = data.tasks || [];
   data.tasks.splice(i, 1);
   saveData();
   renderTasks('all');
@@ -195,26 +177,21 @@ function renderGoals() {
   const list = document.getElementById('goalsList');
   if (!list) return;
   list.innerHTML = '';
-  (data.goals || []).forEach((g, i) => {
+  data.goals.forEach((g, i) => {
     const li = document.createElement('li');
-    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+    li.className = 'list-group-item bg-dark text-light d-flex justify-content-between align-items-center';
     li.innerHTML = `
       <span>${g.checked ? '<s>' : ''}${g.text}${g.checked ? '</s>' : ''}</span>
-      ${document.getElementById('goalText') ? `
-      <div>
-        <input type="checkbox" ${g.checked ? 'checked' : ''} onchange="toggleGoal(${i})">
-        <button class="btn btn-danger btn-sm" onclick="removeGoal(${i})">Suppr</button>
-      </div>` : ''}
+      <div><input type="checkbox" ${g.checked ? 'checked' : ''} onchange="toggleGoal(${i})">
+      <button class="btn btn-danger btn-sm" onclick="removeGoal(${i})">Suppr</button></div>
     `;
     list.appendChild(li);
   });
 }
 
 function addGoal() {
-  console.log('addGoal called');
-  const text = document.getElementById('goalText')?.value.trim();
+  const text = document.getElementById('goalText').value.trim();
   if (text) {
-    data.goals = data.goals || [];
     data.goals.push({text, checked: false});
     saveData();
     renderGoals();
@@ -223,14 +200,12 @@ function addGoal() {
 }
 
 function toggleGoal(i) {
-  data.goals = data.goals || [];
   data.goals[i].checked = !data.goals[i].checked;
   saveData();
   renderGoals();
 }
 
 function removeGoal(i) {
-  data.goals = data.goals || [];
   data.goals.splice(i, 1);
   saveData();
   renderGoals();
@@ -241,19 +216,17 @@ function renderMaterials() {
   const list = document.getElementById('materialsList');
   if (!list) return;
   list.innerHTML = '';
-  (data.materials || []).forEach((m, i) => {
+  data.materials.forEach((m, i) => {
     const li = document.createElement('li');
-    li.className = 'list-group-item d-flex justify-content-between';
-    li.innerHTML = `${m} ${document.getElementById('materialText') ? `<button class="btn btn-danger btn-sm" onclick="removeMaterial(${i})">Suppr</button>` : ''}`;
+    li.className = 'list-group-item bg-dark text-light d-flex justify-content-between';
+    li.innerHTML = `${m} <button class="btn btn-danger btn-sm" onclick="removeMaterial(${i})">Suppr</button>`;
     list.appendChild(li);
   });
 }
 
 function addMaterial() {
-  console.log('addMaterial called');
-  const text = document.getElementById('materialText')?.value.trim();
+  const text = document.getElementById('materialText').value.trim();
   if (text) {
-    data.materials = data.materials || [];
     data.materials.push(text);
     saveData();
     renderMaterials();
@@ -262,7 +235,6 @@ function addMaterial() {
 }
 
 function removeMaterial(i) {
-  data.materials = data.materials || [];
   data.materials.splice(i, 1);
   saveData();
   renderMaterials();
@@ -273,25 +245,20 @@ function renderGallery() {
   const gallery = document.getElementById('gallery') || document.getElementById('galleryPublic');
   if (!gallery) return;
   gallery.innerHTML = '';
-  (data.gallery || []).forEach((src, i) => {
+  data.gallery.forEach((src, i) => {
     const col = document.createElement('div');
     col.className = 'col-md-4 col-sm-6';
     col.innerHTML = `
-      <div class="gallery-item">
-        <img src="${src}" class="img-fluid" alt="Page ${i+1}">
-        <div class="gallery-caption">Page ${i+1}</div>
-      </div>
-      ${document.getElementById('pageUpload') ? `<button class="btn btn-danger btn-sm w-100 mt-2" onclick="removePage(${i})">Supprimer</button>` : ''}
+      <img src="${src}" class="img-fluid" alt="Page ${i+1}">
+      <button class="btn btn-danger btn-sm w-100 mt-2" onclick="removePage(${i})">Supprimer</button>
     `;
     gallery.appendChild(col);
   });
 }
 
 function uploadPages() {
-  console.log('uploadPages called');
-  const files = document.getElementById('pageUpload')?.files;
-  if (!files || files.length === 0) return;
-  data.gallery = data.gallery || [];
+  const files = document.getElementById('pageUpload').files;
+  if (files.length === 0) return;
   Array.from(files).forEach(file => {
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -305,15 +272,13 @@ function uploadPages() {
 }
 
 function removePage(i) {
-  data.gallery = data.gallery || [];
   data.gallery.splice(i, 1);
   saveData();
   renderGallery();
 }
 
-// Init listeners pour app.html
-if (document.getElementById('totalPages')) {
-  ['totalPages', 'drawnPages', 'digitizedPages'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateProgress);
-  });
-}
+// Init
+window.onload = function() {
+  renderMembers(); renderTasks('all'); renderGoals(); renderMaterials(); updateProgress(); renderGallery();
+  ['totalPages','drawnPages','digitizedPages'].forEach(id => document.getElementById(id).addEventListener('input', updateProgress));
+};
